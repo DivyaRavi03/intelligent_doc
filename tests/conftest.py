@@ -322,3 +322,46 @@ def sample_chunks(sample_paper: PaperStructure) -> list[EnrichedChunk]:
 
     chunker = SectionAwareChunker(target_tokens=512, overlap_tokens=50)
     return chunker.chunk(sample_paper)
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture()
+def sample_search_results():
+    """Pre-built SearchResult objects for retrieval tests."""
+    from src.retrieval.vector_store import SearchResult
+
+    topics = ["deep learning", "transformers", "attention", "NLP", "embeddings"]
+    return [
+        SearchResult(
+            chunk_id=f"chunk-{i}",
+            text=f"Sample text for chunk {i} about {topics[i % 5]}",
+            score=1.0 - (i * 0.1),
+            paper_id="paper-001",
+            section_type="introduction",
+            section_title="1. Introduction",
+            page_numbers=[1],
+            metadata={},
+        )
+        for i in range(5)
+    ]
+
+
+@pytest.fixture()
+def sample_ranked_results():
+    """Pre-built RankedResult objects for reranker and processor tests."""
+    from src.retrieval.hybrid_retriever import RankedResult
+
+    sections = ["introduction", "methodology", "results", "conclusion", "abstract"]
+    return [
+        RankedResult(
+            chunk_id=f"chunk-{i}",
+            text=f"Sample passage {i} about topic",
+            paper_id="paper-001",
+            section_type=sections[i % 5],
+            rrf_score=1.0 / (60 + i + 1),
+        )
+        for i in range(5)
+    ]

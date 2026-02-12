@@ -15,6 +15,7 @@ from src.ingestion.layout_analyzer import LayoutAnalyzer
 from src.ingestion.metadata_extractor import MetadataExtractor
 from src.ingestion.pdf_parser import PDFParser
 from src.ingestion.table_extractor import TableExtractor
+from src.api.routes_extract import router as feedback_router
 from src.models.schemas import (
     DocumentMetadataSchema,
     DocumentStatus,
@@ -40,6 +41,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(feedback_router)
 
 
 @app.on_event("startup")

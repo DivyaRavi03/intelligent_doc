@@ -198,3 +198,141 @@ class HealthResponse(BaseModel):
 
     status: str = "ok"
     version: str = "0.1.0"
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — LLM response schemas
+# ---------------------------------------------------------------------------
+
+class LLMResponse(BaseModel):
+    """Response from GeminiClient.generate()."""
+
+    content: str
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    latency_ms: float = Field(ge=0.0)
+    model: str
+    cached: bool = False
+    cost_usd: float = Field(ge=0.0)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Extraction schemas
+# ---------------------------------------------------------------------------
+
+class Finding(BaseModel):
+    """A single key finding extracted from a paper."""
+
+    claim: str
+    supporting_quote: str
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class MethodologyExtraction(BaseModel):
+    """Structured methodology from a paper."""
+
+    approach: str
+    datasets: list[str] = Field(default_factory=list)
+    tools: list[str] = Field(default_factory=list)
+    eval_metrics: list[str] = Field(default_factory=list)
+
+
+class ResultExtraction(BaseModel):
+    """A single quantitative result."""
+
+    metric_name: str
+    value: str
+    baseline: str | None = None
+    improvement: str | None = None
+    table_reference: str | None = None
+
+
+class PaperExtraction(BaseModel):
+    """Complete extraction from a single paper."""
+
+    paper_id: str
+    key_findings: list[Finding] = Field(default_factory=list)
+    methodology: MethodologyExtraction | None = None
+    results: list[ResultExtraction] = Field(default_factory=list)
+    confidence: float = Field(ge=0.0, le=1.0, default=0.0)
+    needs_review: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — QA schemas
+# ---------------------------------------------------------------------------
+
+class Citation(BaseModel):
+    """A source citation in an answer."""
+
+    source_index: int = Field(ge=1)
+    chunk_id: str
+    text_snippet: str
+    paper_id: str
+    section_type: str
+    page_numbers: list[int] = Field(default_factory=list)
+
+
+class ClaimVerification(BaseModel):
+    """Verification status of a single claim in an answer."""
+
+    claim: str
+    cited_source_index: int | None = None
+    status: str = Field(description="SUPPORTED, PARTIALLY_SUPPORTED, or NOT_SUPPORTED")
+    explanation: str = ""
+
+
+class QAResponse(BaseModel):
+    """Full QA response with answer, citations, and verification."""
+
+    query: str
+    answer: str
+    citations: list[Citation] = Field(default_factory=list)
+    claim_verifications: list[ClaimVerification] = Field(default_factory=list)
+    faithfulness_score: float = Field(ge=0.0, le=1.0, default=0.0)
+    flagged_claims: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Summarization schemas
+# ---------------------------------------------------------------------------
+
+class SummaryLevel(str, Enum):
+    ONE_LINE = "one_line"
+    ABSTRACT = "abstract"
+    DETAILED = "detailed"
+
+
+class SummaryResult(BaseModel):
+    """Result of paper summarization."""
+
+    paper_id: str
+    level: SummaryLevel
+    summary: str
+    word_count: int = Field(ge=0)
+    sections_used: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Feedback schemas
+# ---------------------------------------------------------------------------
+
+class FeedbackRequest(BaseModel):
+    """Request body for POST /api/v1/feedback."""
+
+    paper_id: str
+    field_name: str
+    original_value: str
+    corrected_value: str
+    user_comment: str = ""
+
+
+class FeedbackResponse(BaseModel):
+    """Response after feedback is recorded."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    paper_id: str
+    field_name: str
+    created_at: datetime

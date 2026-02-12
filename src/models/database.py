@@ -149,3 +149,21 @@ class Section(Base):
     __table_args__ = (
         Index("ix_sections_document_order", "document_id", "order_index"),
     )
+
+
+class ExtractionFeedback(Base):
+    """User feedback on extracted fields for continuous improvement."""
+
+    __tablename__ = "extraction_feedback"
+
+    id: uuid.UUID = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    paper_id: str = Column(String(256), nullable=False)
+    field_name: str = Column(String(128), nullable=False)
+    original_value: str = Column(Text, nullable=False)
+    corrected_value: str = Column(Text, nullable=False)
+    user_comment: str = Column(Text, nullable=False, default="")
+    created_at: datetime = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("ix_feedback_paper_field", "paper_id", "field_name"),
+    )
