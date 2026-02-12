@@ -1,0 +1,62 @@
+[
+  {
+    "query": "What is the main contribution of the paper?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-abstract-0", "test-paper-001-conclusion-0"],
+    "expected_answer": "A novel deep learning approach to document understanding combining visual and textual features"
+  },
+  {
+    "query": "What datasets were used for evaluation?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-results-0", "test-paper-001-methodology-0"],
+    "expected_answer": "The model was evaluated on DocBank and PubLayNet benchmarks"
+  },
+  {
+    "query": "What F1 score did the model achieve?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-results-0"],
+    "expected_answer": "The model achieved 94.2% F1 score on DocBank"
+  },
+  {
+    "query": "Who are the authors of this paper?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-title-0"],
+    "expected_answer": "Alice Smith and Bob Jones"
+  },
+  {
+    "query": "What architecture does the model use?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-methodology-0", "test-paper-001-introduction-0"],
+    "expected_answer": "The model uses a multi-modal transformer architecture with cross-attention"
+  },
+  {
+    "query": "How does the approach compare to LayoutLM?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-results-0", "test-paper-001-conclusion-0"],
+    "expected_answer": "The approach outperforms LayoutLM on both F1 and mAP metrics"
+  },
+  {
+    "query": "What visual features are used in the model?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-methodology-0"],
+    "expected_answer": "The model uses a ResNet-50 backbone for visual feature extraction"
+  },
+  {
+    "query": "What is the training procedure?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-methodology-0"],
+    "expected_answer": "The model is trained end-to-end with a combined classification and layout regression loss"
+  },
+  {
+    "query": "What mAP score was achieved on PubLayNet?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-results-0"],
+    "expected_answer": "The model achieved 91.8% mAP on the PubLayNet benchmark"
+  },
+  {
+    "query": "What problem does this paper address?",
+    "paper_id": "test-paper-001",
+    "relevant_chunk_ids": ["test-paper-001-abstract-0", "test-paper-001-introduction-0"],
+    "expected_answer": "The paper addresses automatic document understanding by jointly modeling visual layout and textual content"
+  }
+]

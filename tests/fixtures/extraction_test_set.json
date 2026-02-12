@@ -1,0 +1,67 @@
+[
+  {
+    "paper_id": "test-paper-001",
+    "paper_text": "Deep Learning for Document Understanding\nAlice Smith, Bob Jones\n\nAbstract\nThis paper presents a novel approach to document understanding using deep neural networks. We combine visual layout features with textual representations in a multi-modal transformer architecture. Our model achieves state-of-the-art results on multiple benchmarks including DocBank and PubLayNet, with 94.2% F1 and 91.8% mAP respectively.\n\nKeywords: deep learning, document AI, layout analysis, multi-modal\n\n1. Introduction\nDocument understanding is a critical task in information extraction. Traditional approaches rely on rule-based systems that fail to generalize across document types. Recent advances in deep learning have shown promise in addressing these limitations.\n\n2. Methodology\nWe propose a multi-modal transformer that jointly processes visual and textual features. Visual features are extracted using a ResNet-50 backbone, while text is encoded with a BERT-based tokenizer. Cross-attention layers fuse both modalities.\n\n3. Results\nOur model achieves 94.2% F1 on DocBank and 91.8% mAP on PubLayNet, outperforming LayoutLM by 2.1% and 1.5% respectively.\n\n4. Conclusion\nWe presented a novel multi-modal approach to document understanding that sets new state-of-the-art results.",
+    "expected_title": "Deep Learning for Document Understanding",
+    "expected_authors": ["Alice Smith", "Bob Jones"],
+    "expected_abstract": "This paper presents a novel approach to document understanding using deep neural networks. We combine visual layout features with textual representations in a multi-modal transformer architecture. Our model achieves state-of-the-art results on multiple benchmarks including DocBank and PubLayNet, with 94.2% F1 and 91.8% mAP respectively.",
+    "expected_keywords": ["deep learning", "document AI", "layout analysis", "multi-modal"],
+    "expected_findings": [
+      "novel approach to document understanding using deep neural networks",
+      "state-of-the-art results on DocBank and PubLayNet",
+      "94.2% F1 on DocBank and 91.8% mAP on PubLayNet"
+    ]
+  },
+  {
+    "paper_id": "test-paper-002",
+    "paper_text": "Transformer Models for Table Extraction from PDF Documents\nCarol Davis, Dan Edwards\n\nAbstract\nWe propose a transformer-based method for extracting tables from PDF documents. Our approach uses a detection-then-recognition pipeline that achieves 96.1% cell-level accuracy on the ICDAR 2019 benchmark. The system handles complex table structures including merged cells and nested headers.\n\nKeywords: table extraction, transformers, PDF processing, document analysis\n\n1. Introduction\nTable extraction from documents remains challenging due to diverse layouts and formatting styles.\n\n2. Methodology\nOur pipeline consists of a DETR-based table detector followed by a cell recognition module using a sequence-to-sequence transformer.\n\n3. Results\nThe system achieves 96.1% accuracy on ICDAR 2019, surpassing previous methods by 3.2%.",
+    "expected_title": "Transformer Models for Table Extraction from PDF Documents",
+    "expected_authors": ["Carol Davis", "Dan Edwards"],
+    "expected_abstract": "We propose a transformer-based method for extracting tables from PDF documents. Our approach uses a detection-then-recognition pipeline that achieves 96.1% cell-level accuracy on the ICDAR 2019 benchmark. The system handles complex table structures including merged cells and nested headers.",
+    "expected_keywords": ["table extraction", "transformers", "PDF processing", "document analysis"],
+    "expected_findings": [
+      "transformer-based method for table extraction",
+      "96.1% cell-level accuracy on ICDAR 2019",
+      "handles complex table structures including merged cells"
+    ]
+  },
+  {
+    "paper_id": "test-paper-003",
+    "paper_text": "Attention Mechanisms in Natural Language Processing: A Survey\nEve Franklin, George Harris\n\nAbstract\nThis survey provides a comprehensive overview of attention mechanisms in natural language processing. We analyze 50 recent papers spanning machine translation, text classification, and question answering. We identify key trends including multi-head attention, sparse attention, and linear attention variants.\n\nKeywords: attention, NLP, survey, transformers\n\n1. Introduction\nAttention mechanisms have become fundamental building blocks in modern NLP architectures.\n\n2. Taxonomy\nWe categorize attention mechanisms into soft attention, hard attention, self-attention, and cross-attention.\n\n3. Analysis\nMulti-head attention remains the dominant paradigm, used in 85% of surveyed papers.",
+    "expected_title": "Attention Mechanisms in Natural Language Processing: A Survey",
+    "expected_authors": ["Eve Franklin", "George Harris"],
+    "expected_abstract": "This survey provides a comprehensive overview of attention mechanisms in natural language processing. We analyze 50 recent papers spanning machine translation, text classification, and question answering. We identify key trends including multi-head attention, sparse attention, and linear attention variants.",
+    "expected_keywords": ["attention", "NLP", "survey", "transformers"],
+    "expected_findings": [
+      "comprehensive overview of attention mechanisms in NLP",
+      "50 recent papers analyzed",
+      "multi-head attention used in 85% of surveyed papers"
+    ]
+  },
+  {
+    "paper_id": "test-paper-004",
+    "paper_text": "Multi-Modal Learning for Optical Character Recognition\nIris Kim, Jack Lee\n\nAbstract\nWe present a multi-modal approach combining visual and textual features for optical character recognition. By leveraging both pixel-level information and language model priors, our system achieves 98.3% character-level accuracy on the IIIT-5K benchmark. The approach is robust to noise, blur, and perspective distortion.\n\nKeywords: OCR, multi-modal, character recognition, deep learning\n\n1. Introduction\nOCR systems must handle diverse document conditions including low resolution, noise, and complex backgrounds.\n\n2. Methodology\nOur architecture combines a CNN-based visual encoder with a GPT-2 language model decoder, using cross-attention for feature fusion.\n\n3. Results\nWe achieve 98.3% accuracy on IIIT-5K and 97.1% on SVT, with 40ms inference time per image.",
+    "expected_title": "Multi-Modal Learning for Optical Character Recognition",
+    "expected_authors": ["Iris Kim", "Jack Lee"],
+    "expected_abstract": "We present a multi-modal approach combining visual and textual features for optical character recognition. By leveraging both pixel-level information and language model priors, our system achieves 98.3% character-level accuracy on the IIIT-5K benchmark. The approach is robust to noise, blur, and perspective distortion.",
+    "expected_keywords": ["OCR", "multi-modal", "character recognition", "deep learning"],
+    "expected_findings": [
+      "multi-modal approach combining visual and textual features for OCR",
+      "98.3% character-level accuracy on IIIT-5K",
+      "robust to noise, blur, and perspective distortion"
+    ]
+  },
+  {
+    "paper_id": "test-paper-005",
+    "paper_text": "Layout Analysis with Graph Neural Networks\nMike Nguyen, Lisa Park\n\nAbstract\nWe apply graph neural networks to document layout analysis, modeling spatial relationships between document elements as a graph. Our GNN-based approach achieves 92.7% mAP on PubLayNet and 89.3% on DocLayNet, demonstrating strong generalization across document types.\n\nKeywords: layout analysis, GNN, document AI, graph networks\n\n1. Introduction\nDocument layout analysis requires understanding spatial relationships between text blocks, figures, and tables.\n\n2. Methodology\nWe construct a document graph where nodes represent text regions and edges encode spatial proximity. A message-passing GNN classifies each node into layout categories.\n\n3. Results\nOur approach achieves 92.7% mAP on PubLayNet and 89.3% on DocLayNet with 15ms per-document inference.",
+    "expected_title": "Layout Analysis with Graph Neural Networks",
+    "expected_authors": ["Mike Nguyen", "Lisa Park"],
+    "expected_abstract": "We apply graph neural networks to document layout analysis, modeling spatial relationships between document elements as a graph. Our GNN-based approach achieves 92.7% mAP on PubLayNet and 89.3% on DocLayNet, demonstrating strong generalization across document types.",
+    "expected_keywords": ["layout analysis", "GNN", "document AI", "graph networks"],
+    "expected_findings": [
+      "GNN-based approach to document layout analysis",
+      "92.7% mAP on PubLayNet and 89.3% on DocLayNet",
+      "strong generalization across document types"
+    ]
+  }
+]

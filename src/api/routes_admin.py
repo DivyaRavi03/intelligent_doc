@@ -24,6 +24,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
+# Latest evaluation result (set by BenchmarkSuite.run_all)
+_latest_eval: EvaluationResult | None = None
+
+
+def set_latest_evaluation(result: EvaluationResult) -> None:
+    """Store the latest evaluation result."""
+    global _latest_eval  # noqa: PLW0603
+    _latest_eval = result
+
 
 # ------------------------------------------------------------------
 # GET /health
@@ -134,7 +143,9 @@ async def get_costs(
 async def get_latest_evaluation(
     api_key: str = Depends(verify_api_key),
 ) -> EvaluationResult:
-    """Return placeholder evaluation results."""
+    """Return the latest evaluation results, or placeholder if none."""
+    if _latest_eval is not None:
+        return _latest_eval
     return EvaluationResult(
         timestamp=datetime.now(timezone.utc),
         test_set_name="default",

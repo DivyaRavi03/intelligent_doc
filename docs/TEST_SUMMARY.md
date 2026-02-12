@@ -1,8 +1,8 @@
-# Full Test Summary — Phases 1 through 5
+# Full Test Summary — Phases 1 through 6
 
 **Run date:** 2026-02-12
 **Platform:** Linux 6.14.0-37-generic, Python 3.12.3, pytest 9.0.2
-**Result:** 347 passed, 0 failed, 1 warning
+**Result:** 415 passed, 0 failed, 1 warning
 **Duration:** ~4 seconds
 
 ---
@@ -11,13 +11,13 @@
 
 | Metric | Value |
 |--------|-------|
-| Total tests | 347 |
-| Passed | 347 |
+| Total tests | 415 |
+| Passed | 415 |
 | Failed | 0 |
 | Skipped | 0 |
 | Warnings | 1 (FutureWarning: `google.generativeai` deprecated in favor of `google.genai`) |
-| Test files | 20 |
-| Test classes | 40 |
+| Test files | 24 |
+| Test classes | 56 |
 
 ---
 
@@ -30,6 +30,7 @@
 | Phase 3 | Hybrid Retrieval | 4 files | 81 | All passing |
 | Phase 4 | LLM-Powered Processing | 4 files | 77 | All passing |
 | Phase 5 | API & Dashboard | 5 files | 47 | All passing |
+| Phase 6 | Evaluation & Monitoring | 4 files | 68 | All passing |
 
 ---
 
@@ -525,7 +526,7 @@ rate limiting, all CRUD/query/search endpoints, and integration pipeline tests.
 **Source module:** `src/api/rate_limiter.py`
 **Test patterns:** Constant assertions, mock `Request` + `RateLimitExceeded` objects
 
-### test_routes_documents.py — 15 tests
+### test_routes_documents.py — 14 tests
 
 | # | Test | What it verifies |
 |---|------|------------------|
@@ -547,7 +548,7 @@ rate limiting, all CRUD/query/search endpoints, and integration pipeline tests.
 **Source module:** `src/api/routes_documents.py`
 **Test patterns:** `httpx.AsyncClient(transport=ASGITransport(app=app))`, `app.dependency_overrides` for auth and store injection, `@patch` for Celery tasks and settings
 
-### test_routes_query.py — 12 tests
+### test_routes_query.py — 13 tests
 
 | # | Test | What it verifies |
 |---|------|------------------|
@@ -582,6 +583,117 @@ rate limiting, all CRUD/query/search endpoints, and integration pipeline tests.
 
 ---
 
+## Phase 6: Evaluation & Monitoring (68 tests)
+
+Phase 6 adds the evaluation and monitoring layer — concrete proof the system
+works with measurable metrics. It includes retrieval evaluation (Precision@k,
+Recall@k, MRR, NDCG@k), extraction evaluation (exact match, ROUGE-L,
+keyword precision/recall), QA evaluation (LLM-as-Judge scoring), LLM cost
+tracking, and Prometheus metrics. This is the most interview-differentiating
+phase because 99% of candidates have no evaluation pipeline.
+
+### test_cost_tracker.py — 17 tests
+
+| # | Test | What it verifies |
+|---|------|------------------|
+| 1 | `test_flash_pricing` | 1M tokens in + 1M out at flash rates = $0.375 |
+| 2 | `test_zero_tokens` | Zero tokens costs $0.00 |
+| 3 | `test_pro_pricing` | 1M tokens in + 1M out at pro rates = $6.25 |
+| 4 | `test_unknown_model_uses_flash_fallback` | Unknown model name falls back to flash pricing |
+| 5 | `test_small_token_counts` | 100 input + 50 output computed with correct precision |
+| 6 | `test_record_returns_cost` | `record()` returns a positive float |
+| 7 | `test_custom_pricing` | Custom pricing dict overrides defaults |
+| 8 | `test_get_total_cost` | Sum of two `record()` calls equals `get_total_cost()` |
+| 9 | `test_get_daily_cost_today` | Today's cost is > 0 after recording |
+| 10 | `test_get_daily_cost_other_day` | A past date with no records returns 0.0 |
+| 11 | `test_get_cost_by_model` | Per-model breakdown includes both models |
+| 12 | `test_get_cost_by_endpoint` | Per-endpoint breakdown separates `/api/v1/query` and `/api/v1/extract` |
+| 13 | `test_get_cost_by_endpoint_default` | No endpoint provided defaults to `"unknown"` |
+| 14 | `test_get_summary` | Summary dict contains `total_cost`, `daily_cost`, `by_model`, `by_endpoint`, `total_records` |
+| 15 | `test_empty_tracker` | Empty tracker returns 0.0 total, empty dicts |
+| 16 | `test_flash_pricing_exists` | `MODEL_PRICING` has gemini-2.0-flash at $0.075/$0.30 |
+| 17 | `test_pro_pricing_exists` | `MODEL_PRICING` has gemini-1.5-pro at $1.25/$5.00 |
+
+**Source module:** `src/monitoring/cost_tracker.py`
+**Test patterns:** Direct `CostTracker` instantiation, custom pricing injection, `MODEL_PRICING` constant verification
+
+### test_retrieval_eval.py — 24 tests
+
+| # | Test | What it verifies |
+|---|------|------------------|
+| 1 | `test_all_relevant` | Precision@k = 1.0 when all retrieved are relevant |
+| 2 | `test_none_relevant` | Precision@k = 0.0 when none are relevant |
+| 3 | `test_partial_relevant` | Precision@k = 0.5 when 2 of 4 are relevant |
+| 4 | `test_k_larger_than_retrieved` | k > len(retrieved) still computes correctly |
+| 5 | `test_empty_retrieved` | Empty retrieved list returns 0.0 |
+| 6 | `test_all_found` | Recall@k = 1.0 when all relevant found in top-k |
+| 7 | `test_partial_found` | Recall@k = 1/3 when 1 of 3 relevant found |
+| 8 | `test_empty_relevant` | Recall with empty relevant set returns 0.0 |
+| 9 | `test_none_found` | Recall = 0.0 when no relevant found |
+| 10 | `test_first_hit` | MRR = 1.0 when first result is relevant |
+| 11 | `test_second_hit` | MRR = 0.5 when first relevant is at position 2 |
+| 12 | `test_third_hit` | MRR = 1/3 when first relevant is at position 3 |
+| 13 | `test_no_hit` | MRR = 0.0 when no relevant found |
+| 14 | `test_empty_retrieved` | MRR = 0.0 for empty retrieved list |
+| 15 | `test_perfect_ranking` | NDCG@k = 1.0 for perfect ranking |
+| 16 | `test_empty_relevant` | NDCG with no relevant docs returns 0.0 |
+| 17 | `test_imperfect_ranking` | NDCG between 0 and 1 for suboptimal ranking |
+| 18 | `test_no_relevant_found` | NDCG = 0.0 when no relevant docs retrieved |
+| 19 | `test_returns_result` | `evaluate()` returns `RetrievalEvalResult` with correct num_queries |
+| 20 | `test_empty_test_set` | Empty test set returns zeros |
+| 21 | `test_perfect_retrieval_scores_1` | Perfect retrieval yields precision=1.0, recall=1.0, MRR=1.0 |
+| 22 | `test_retriever_failure_handled` | Retriever `RuntimeError` handled gracefully, MRR=0.0 |
+| 23 | `test_to_dict_serialisable` | `to_dict()` produces JSON-serializable dict with all keys |
+| 24 | `test_loads_fixture` | `load_test_set()` loads JSON from tmp file correctly |
+
+**Source module:** `src/evaluation/retrieval_eval.py`
+**Test patterns:** `@staticmethod` metric functions tested directly, mock `HybridRetriever` for evaluator, `RankedResult` helper, `tmp_path` for fixture loading
+
+### test_extraction_eval.py — 18 tests
+
+| # | Test | What it verifies |
+|---|------|------------------|
+| 1 | `test_identical` | Exact match returns 1.0 for identical strings (case-insensitive) |
+| 2 | `test_different` | Exact match returns 0.0 for different strings |
+| 3 | `test_with_whitespace` | Exact match ignores leading/trailing whitespace |
+| 4 | `test_empty` | Exact match of two empty strings returns 1.0 |
+| 5 | `test_same_set` | Exact match list returns 1.0 for same elements in any order |
+| 6 | `test_different_set` | Exact match list returns 0.0 for disjoint sets |
+| 7 | `test_subset` | Exact match list returns 0.0 for partial overlap (strict match) |
+| 8 | `test_identical` | ROUGE-L > 0.99 for identical text |
+| 9 | `test_partial_overlap` | ROUGE-L between 0 and 1 for partial overlap |
+| 10 | `test_no_overlap` | ROUGE-L < 0.5 for no common subsequence |
+| 11 | `test_empty_predicted` | ROUGE-L = 0.0 when prediction is empty |
+| 12 | `test_perfect` | Keyword precision=1.0 and recall=1.0 for identical sets |
+| 13 | `test_partial` | Keyword precision=0.5, recall=0.5 for half overlap |
+| 14 | `test_empty_predicted` | Keyword precision=0.0, recall=0.0 for empty prediction |
+| 15 | `test_no_overlap` | Keyword precision=0.0, recall=0.0 for disjoint sets |
+| 16 | `test_returns_result` | `evaluate()` returns `ExtractionEvalResult` with per-field accuracy |
+| 17 | `test_empty_test_set` | Empty test set returns num_papers=0, accuracy=0.0 |
+| 18 | `test_to_dict` | `to_dict()` produces dict with `num_papers` and `overall_accuracy` |
+
+**Source module:** `src/evaluation/extraction_eval.py`
+**Test patterns:** `@staticmethod` metric functions tested directly, mock `GeminiClient` with `side_effect` for 4 sequential LLM calls (dual-prompt findings + methodology + results), `PaperExtractor` with injected client
+
+### test_qa_eval.py — 9 tests
+
+| # | Test | What it verifies |
+|---|------|------------------|
+| 1 | `test_returns_scores` | Judge returns faithfulness=5, relevance=4, completeness=3 from JSON |
+| 2 | `test_failure_returns_zeros` | LLM `RuntimeError` returns (0, 0, 0) scores |
+| 3 | `test_invalid_json_returns_zeros` | Non-JSON LLM output returns (0, 0, 0) scores |
+| 4 | `test_markdown_fences_stripped` | Markdown-fenced JSON parsed after stripping fences |
+| 5 | `test_returns_result` | Full evaluate returns `QAEvalResult` with correct metrics |
+| 6 | `test_empty_test_set` | Empty test set returns num_queries=0, all zeros |
+| 7 | `test_no_answer_detected` | "Unable to generate" detected as no-answer, hallucination_rate=1.0 |
+| 8 | `test_qa_engine_failure_handled` | QA engine `RuntimeError` handled, avg_faithfulness=0.0 |
+| 9 | `test_to_dict` | `to_dict()` produces dict with all metric fields |
+
+**Source module:** `src/evaluation/qa_eval.py`
+**Test patterns:** Mock `GeminiClient` as judge, mock `QAEngine` with `QAResponse`, `_llm_response()` helper, JSON response parsing
+
+---
+
 ## Test-to-Source Coverage Map
 
 | Source module | Test file | Tests |
@@ -603,10 +715,14 @@ rate limiting, all CRUD/query/search endpoints, and integration pipeline tests.
 | `src/llm/summarizer.py` | `test_summarizer.py` | 16 |
 | `src/api/auth.py` + `src/api/stores.py` | `test_auth.py` | 10 |
 | `src/api/rate_limiter.py` | `test_rate_limiter.py` | 6 |
-| `src/api/routes_documents.py` | `test_routes_documents.py` | 15 |
-| `src/api/routes_query.py` | `test_routes_query.py` | 12 |
+| `src/api/routes_documents.py` | `test_routes_documents.py` | 14 |
+| `src/api/routes_query.py` | `test_routes_query.py` | 13 |
 | `src/workers/tasks.py` | `test_upload_pipeline.py` | 4 |
-| **Total** | **20 files** | **347** |
+| `src/monitoring/cost_tracker.py` | `test_cost_tracker.py` | 17 |
+| `src/evaluation/retrieval_eval.py` | `test_retrieval_eval.py` | 24 |
+| `src/evaluation/extraction_eval.py` | `test_extraction_eval.py` | 18 |
+| `src/evaluation/qa_eval.py` | `test_qa_eval.py` | 9 |
+| **Total** | **24 files** | **415** |
 
 ---
 
@@ -616,15 +732,15 @@ Each test category and what aspect of the system it validates:
 
 | Category | Count | Examples |
 |----------|-------|---------|
-| **Happy path** | ~110 | Correct output on valid input, successful uploads, query responses |
-| **Edge cases** | ~65 | Empty input, whitespace, missing fields, oversized files |
-| **Error handling** | ~55 | API failures, missing keys, corrupt files, engine exceptions |
-| **Graceful degradation** | ~35 | Redis down, LLM errors, missing retriever, Celery fallback |
+| **Happy path** | ~120 | Correct output on valid input, successful uploads, query responses, correct eval scores |
+| **Edge cases** | ~70 | Empty input, whitespace, missing fields, oversized files, zero tokens, empty test sets |
+| **Error handling** | ~65 | API failures, missing keys, corrupt files, engine exceptions, invalid JSON from LLM |
+| **Graceful degradation** | ~40 | Redis down, LLM errors, missing retriever, Celery fallback, unknown models |
+| **Math verification** | ~45 | RRF formula, confidence formula, cost computation, precision/recall/MRR/NDCG, ROUGE-L |
 | **Auth & security** | ~15 | Missing API key (401), invalid key, rate limit constants |
 | **HTTP status codes** | ~20 | 201 created, 204 no content, 400/404/413/422 errors |
-| **Math verification** | ~25 | RRF formula, confidence formula, cost computation |
 | **Filter/query logic** | ~25 | paper_id filter, section_type filter, dedup, pagination |
-| **Data integrity** | ~25 | Deterministic IDs, sequential indices, unique keys |
+| **Data integrity** | ~25 | Deterministic IDs, sequential indices, unique keys, serializable dicts |
 | **Integration pipeline** | ~4 | Full 9-stage pipeline, progress callbacks, store persistence |
 
 ---
@@ -655,6 +771,7 @@ python3 -m pytest tests/unit/test_chunker.py tests/unit/test_embedding_service.p
 python3 -m pytest tests/unit/test_bm25_index.py tests/unit/test_hybrid_retriever.py tests/unit/test_reranker.py tests/unit/test_query_processor.py -v  # Phase 3
 python3 -m pytest tests/unit/test_gemini_client.py tests/unit/test_extractor.py tests/unit/test_qa_engine.py tests/unit/test_summarizer.py -v  # Phase 4
 python3 -m pytest tests/unit/test_auth.py tests/unit/test_rate_limiter.py tests/unit/test_routes_documents.py tests/unit/test_routes_query.py tests/integration/test_upload_pipeline.py -v  # Phase 5
+python3 -m pytest tests/unit/test_cost_tracker.py tests/unit/test_retrieval_eval.py tests/unit/test_extraction_eval.py tests/unit/test_qa_eval.py -v  # Phase 6
 
 # Integration tests only
 python3 -m pytest tests/integration/ -v
