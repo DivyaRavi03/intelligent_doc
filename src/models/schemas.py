@@ -138,6 +138,7 @@ class DocumentUploadResponse(BaseModel):
     filename: str
     status: DocumentStatus
     num_pages: int | None = None
+    task_id: str | None = None
     created_at: datetime
 
 
@@ -336,3 +337,186 @@ class FeedbackResponse(BaseModel):
     paper_id: str
     field_name: str
     created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Document list schemas
+# ---------------------------------------------------------------------------
+
+class DocumentListItem(BaseModel):
+    """Minimal document info for list view."""
+
+    id: uuid.UUID
+    filename: str
+    status: DocumentStatus
+    num_pages: int | None = None
+    created_at: datetime
+    metadata_title: str | None = None
+
+
+class DocumentListResponse(BaseModel):
+    """Paginated document list."""
+
+    documents: list[DocumentListItem]
+    total: int
+    offset: int = 0
+    limit: int = 20
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Query / search schemas
+# ---------------------------------------------------------------------------
+
+class QueryRequest(BaseModel):
+    """Request body for POST /api/v1/query."""
+
+    query: str = Field(min_length=1, max_length=2000, description="Question about papers")
+    paper_ids: list[str] | None = Field(
+        default=None, description="Restrict to specific paper IDs"
+    )
+    top_k: int = Field(default=5, ge=1, le=20, description="Number of context passages")
+
+
+class SearchRequest(BaseModel):
+    """Request body for POST /api/v1/search."""
+
+    query: str = Field(min_length=1, max_length=2000, description="Search query")
+    paper_id: str | None = Field(default=None, description="Restrict to one paper")
+    section_type: str | None = Field(default=None, description="Filter by section type")
+    top_k: int = Field(default=10, ge=1, le=50, description="Number of results")
+    alpha: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Dense vs sparse weight (1.0 = all dense)"
+    )
+
+
+class SearchResultItem(BaseModel):
+    """A single search result."""
+
+    chunk_id: str
+    text: str
+    score: float
+    paper_id: str
+    section_type: str
+    page_numbers: list[int] = Field(default_factory=list)
+
+
+class SearchResponse(BaseModel):
+    """Search results response."""
+
+    query: str
+    results: list[SearchResultItem]
+    total_results: int
+
+
+class CompareRequest(BaseModel):
+    """Request body for POST /api/v1/compare."""
+
+    paper_ids: list[str] = Field(min_length=2, max_length=5, description="Papers to compare")
+    aspect: str = Field(default="methodology", description="Comparison aspect")
+
+
+class CompareResponse(BaseModel):
+    """Paper comparison response."""
+
+    aspect: str
+    papers: dict[str, str] = Field(description="paper_id → aspect summary")
+    comparison_text: str
+    key_differences: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Extraction management schemas
+# ---------------------------------------------------------------------------
+
+class ReExtractRequest(BaseModel):
+    """Request body for POST /api/v1/documents/{id}/re-extract."""
+
+    extraction_types: list[str] = Field(
+        default_factory=lambda: ["findings", "methodology", "results"],
+        description="Which extractions to re-run",
+    )
+    force: bool = Field(default=False, description="Force re-extraction even if cached")
+
+
+class ExtractionStatsResponse(BaseModel):
+    """Extraction feedback statistics."""
+
+    total_feedback: int
+    by_field: dict[str, int] = Field(default_factory=dict)
+    flagged_papers: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Admin schemas
+# ---------------------------------------------------------------------------
+
+class HealthCheckResponse(BaseModel):
+    """Detailed health check response for all services."""
+
+    status: str = "ok"
+    version: str = "0.1.0"
+    database: str = "ok"
+    redis: str = "ok"
+    chromadb: str = "ok"
+    timestamp: datetime
+
+
+class MetricsResponse(BaseModel):
+    """System usage metrics."""
+
+    total_documents: int = 0
+    total_queries: int = 0
+    total_llm_tokens: int = 0
+    total_cost_usd: float = 0.0
+    avg_processing_time_sec: float | None = None
+    error_rate: float = 0.0
+
+
+class CostBreakdown(BaseModel):
+    """LLM cost breakdown by operation type."""
+
+    gemini_embedding_cost: float = 0.0
+    gemini_generation_cost: float = 0.0
+    total_cost: float = 0.0
+    documents_processed: int = 0
+    queries_answered: int = 0
+    avg_cost_per_document: float = 0.0
+
+
+class EvaluationResult(BaseModel):
+    """Latest evaluation results from test set."""
+
+    timestamp: datetime
+    test_set_name: str = ""
+    accuracy: float = 0.0
+    faithfulness_score: float = 0.0
+    avg_latency_ms: float = 0.0
+    pass_rate: float = 0.0
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — WebSocket / task schemas
+# ---------------------------------------------------------------------------
+
+class ProcessingUpdate(BaseModel):
+    """WebSocket message for real-time processing updates."""
+
+    task_id: str
+    status: str = Field(description="queued | processing | completed | failed")
+    stage: str | None = None
+    progress: float = Field(ge=0.0, le=1.0, default=0.0)
+    step: str | None = None
+    warnings: list[str] = Field(default_factory=list)
+    error: str | None = None
+    result: dict | None = None
+
+
+class TaskStatusResponse(BaseModel):
+    """Response for GET /api/v1/documents/{id}/status."""
+
+    document_id: uuid.UUID
+    status: DocumentStatus
+    task_id: str | None = None
+    progress: float = 0.0
+    current_stage: str | None = None
+    error_message: str | None = None

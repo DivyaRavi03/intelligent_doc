@@ -1,8 +1,8 @@
-# Full Test Summary — Phases 1 through 4
+# Full Test Summary — Phases 1 through 5
 
 **Run date:** 2026-02-12
 **Platform:** Linux 6.14.0-37-generic, Python 3.12.3, pytest 9.0.2
-**Result:** 300 passed, 0 failed, 1 warning
+**Result:** 347 passed, 0 failed, 1 warning
 **Duration:** ~4 seconds
 
 ---
@@ -11,13 +11,13 @@
 
 | Metric | Value |
 |--------|-------|
-| Total tests | 300 |
-| Passed | 300 |
+| Total tests | 347 |
+| Passed | 347 |
 | Failed | 0 |
 | Skipped | 0 |
 | Warnings | 1 (FutureWarning: `google.generativeai` deprecated in favor of `google.genai`) |
-| Test files | 15 |
-| Test classes | 28 |
+| Test files | 20 |
+| Test classes | 40 |
 
 ---
 
@@ -29,6 +29,7 @@
 | Phase 2 | Chunking & Embedding | 3 files | 64 | All passing |
 | Phase 3 | Hybrid Retrieval | 4 files | 81 | All passing |
 | Phase 4 | LLM-Powered Processing | 4 files | 77 | All passing |
+| Phase 5 | API & Dashboard | 5 files | 47 | All passing |
 
 ---
 
@@ -485,6 +486,102 @@ summarization.
 
 ---
 
+## Phase 5: API & Dashboard (47 tests)
+
+Phase 5 exposes the full platform via FastAPI REST endpoints with API key
+authentication, rate limiting, async document processing (Celery with sync
+fallback), WebSocket status updates, and admin monitoring. Tests cover auth,
+rate limiting, all CRUD/query/search endpoints, and integration pipeline tests.
+
+### test_auth.py — 10 tests
+
+| # | Test | What it verifies |
+|---|------|------------------|
+| 1 | `test_valid_key` | Valid API key passes verification, returns the key string |
+| 2 | `test_invalid_key` | Invalid key raises 401 HTTPException |
+| 3 | `test_missing_key_none` | None key (no header) raises 401 |
+| 4 | `test_missing_key_empty` | Empty string key raises 401 |
+| 5 | `test_returns_key` | `optional_api_key` returns key when present |
+| 6 | `test_returns_none` | `optional_api_key` returns None when no key |
+| 7 | `test_validate_known_key` | `InMemoryAPIKeyStore.validate()` returns True for pre-populated key |
+| 8 | `test_validate_unknown_key` | `validate()` returns False for unknown key |
+| 9 | `test_get_limits` | `get_limits()` returns rate limit dict for valid key |
+| 10 | `test_get_limits_unknown` | `get_limits()` returns None for unknown key |
+
+**Source modules:** `src/api/auth.py`, `src/api/stores.py`
+**Test patterns:** Direct function calls, `HTTPException` assertion, `InMemoryAPIKeyStore` instance
+
+### test_rate_limiter.py — 6 tests
+
+| # | Test | What it verifies |
+|---|------|------------------|
+| 1 | `test_upload_limit` | `UPLOAD_LIMIT` is `"10/hour"` |
+| 2 | `test_query_limit` | `QUERY_LIMIT` is `"100/hour"` |
+| 3 | `test_admin_limit` | `ADMIN_LIMIT` is `"20/minute"` |
+| 4 | `test_limiter_exists` | `limiter` is a `Limiter` instance |
+| 5 | `test_handler_returns_429` | `rate_limit_exceeded_handler` returns 429 status |
+| 6 | `test_default_retry_after` | Response includes `Retry-After` header |
+
+**Source module:** `src/api/rate_limiter.py`
+**Test patterns:** Constant assertions, mock `Request` + `RateLimitExceeded` objects
+
+### test_routes_documents.py — 15 tests
+
+| # | Test | What it verifies |
+|---|------|------------------|
+| 1 | `test_upload_success` | POST `/upload` returns 201 with doc `id` and `filename` |
+| 2 | `test_upload_missing_auth` | Upload without `X-API-Key` returns 401 |
+| 3 | `test_upload_non_pdf` | Non-PDF file (CSV) returns 400 with "PDF" in message |
+| 4 | `test_upload_oversized` | File exceeding `max_upload_size_mb` returns 413 |
+| 5 | `test_get_document_found` | GET `/{doc_id}` returns 200 with full document details |
+| 6 | `test_get_document_not_found` | GET unknown `doc_id` returns 404 |
+| 7 | `test_status_returns_fields` | GET `/{doc_id}/status` returns status, document_id, task_id |
+| 8 | `test_list_default_pagination` | GET `/` returns all docs with `total` count |
+| 9 | `test_list_custom_offset_limit` | Pagination with `?offset=2&limit=2` returns correct slice |
+| 10 | `test_list_filter_by_status` | Filter `?status=completed` returns only matching docs |
+| 11 | `test_delete_success` | DELETE `/{doc_id}` returns 204 and removes from store |
+| 12 | `test_delete_not_found` | DELETE unknown doc returns 404 |
+| 13 | `test_returns_sections` | GET `/{doc_id}/sections` returns sections with `total` |
+| 14 | `test_returns_tables` | GET `/{doc_id}/tables` returns tables with `total` |
+
+**Source module:** `src/api/routes_documents.py`
+**Test patterns:** `httpx.AsyncClient(transport=ASGITransport(app=app))`, `app.dependency_overrides` for auth and store injection, `@patch` for Celery tasks and settings
+
+### test_routes_query.py — 12 tests
+
+| # | Test | What it verifies |
+|---|------|------------------|
+| 1 | `test_query_returns_response` | POST `/query` returns 200 with `answer` field |
+| 2 | `test_query_missing_auth` | Query without auth returns 401 |
+| 3 | `test_query_empty_query` | Empty query string returns 422 validation error |
+| 4 | `test_query_engine_error` | QAEngine exception returns 500 |
+| 5 | `test_search_returns_results` | POST `/search` returns results with scores |
+| 6 | `test_search_with_filters` | Search passes `paper_id`, `section_type`, `top_k`, `alpha` to retriever |
+| 7 | `test_search_error` | Retriever exception returns 500 |
+| 8 | `test_compare_returns_comparison` | POST `/compare` returns comparison with aspect and papers |
+| 9 | `test_compare_too_few_papers` | Fewer than 2 paper_ids returns 422 |
+| 10 | `test_summary_returns_result` | GET `/{doc_id}/summary/abstract` returns summary |
+| 11 | `test_summary_doc_not_found` | Summary for unknown doc returns 404 |
+| 12 | `test_summary_invalid_level` | Invalid level (e.g., `mega_detailed`) returns 422 |
+| 13 | `test_summary_not_completed` | Summary for non-completed doc returns 400 |
+
+**Source module:** `src/api/routes_query.py`
+**Test patterns:** Mock `QAEngine`, `HybridRetriever`, `GeminiClient`, `PaperSummarizer` via `@patch` on `_get_*()` getters, `app.dependency_overrides` for auth
+
+### test_upload_pipeline.py — 4 integration tests
+
+| # | Test | What it verifies |
+|---|------|------------------|
+| 1 | `test_pipeline_completes` | Full 9-stage pipeline runs on real PDF, returns `completed` with page/section/chunk counts |
+| 2 | `test_pipeline_stores_results` | Pipeline saves metadata, sections, and tables to `InMemoryDocumentStore` |
+| 3 | `test_pipeline_invalid_pdf` | Invalid PDF triggers `FAILED` status and raises exception |
+| 4 | `test_pipeline_progress_callback` | Progress callback invoked at least 3 times including `pdf_extraction` stage |
+
+**Source module:** `src/workers/tasks.py` (`_process_document_impl`)
+**Test patterns:** Direct function call (no Celery), `tmp_pdf` fixture from `conftest.py`, `InMemoryDocumentStore` for state verification
+
+---
+
 ## Test-to-Source Coverage Map
 
 | Source module | Test file | Tests |
@@ -504,7 +601,12 @@ summarization.
 | `src/llm/extractor.py` | `test_extractor.py` | 23 |
 | `src/llm/qa_engine.py` | `test_qa_engine.py` | 22 |
 | `src/llm/summarizer.py` | `test_summarizer.py` | 16 |
-| **Total** | **15 files** | **300** |
+| `src/api/auth.py` + `src/api/stores.py` | `test_auth.py` | 10 |
+| `src/api/rate_limiter.py` | `test_rate_limiter.py` | 6 |
+| `src/api/routes_documents.py` | `test_routes_documents.py` | 15 |
+| `src/api/routes_query.py` | `test_routes_query.py` | 12 |
+| `src/workers/tasks.py` | `test_upload_pipeline.py` | 4 |
+| **Total** | **20 files** | **347** |
 
 ---
 
@@ -514,13 +616,16 @@ Each test category and what aspect of the system it validates:
 
 | Category | Count | Examples |
 |----------|-------|---------|
-| **Happy path** | ~90 | Correct output on valid input |
-| **Edge cases** | ~60 | Empty input, whitespace, missing fields |
-| **Error handling** | ~45 | API failures, missing keys, corrupt files |
-| **Graceful degradation** | ~30 | Redis down, LLM errors, missing retriever |
+| **Happy path** | ~110 | Correct output on valid input, successful uploads, query responses |
+| **Edge cases** | ~65 | Empty input, whitespace, missing fields, oversized files |
+| **Error handling** | ~55 | API failures, missing keys, corrupt files, engine exceptions |
+| **Graceful degradation** | ~35 | Redis down, LLM errors, missing retriever, Celery fallback |
+| **Auth & security** | ~15 | Missing API key (401), invalid key, rate limit constants |
+| **HTTP status codes** | ~20 | 201 created, 204 no content, 400/404/413/422 errors |
 | **Math verification** | ~25 | RRF formula, confidence formula, cost computation |
-| **Filter/query logic** | ~25 | paper_id filter, section_type filter, dedup |
+| **Filter/query logic** | ~25 | paper_id filter, section_type filter, dedup, pagination |
 | **Data integrity** | ~25 | Deterministic IDs, sequential indices, unique keys |
+| **Integration pipeline** | ~4 | Full 9-stage pipeline, progress callbacks, store persistence |
 
 ---
 
@@ -549,6 +654,10 @@ python3 -m pytest tests/unit/test_pdf_parser.py tests/unit/test_layout_analyzer.
 python3 -m pytest tests/unit/test_chunker.py tests/unit/test_embedding_service.py tests/unit/test_vector_store.py -v  # Phase 2
 python3 -m pytest tests/unit/test_bm25_index.py tests/unit/test_hybrid_retriever.py tests/unit/test_reranker.py tests/unit/test_query_processor.py -v  # Phase 3
 python3 -m pytest tests/unit/test_gemini_client.py tests/unit/test_extractor.py tests/unit/test_qa_engine.py tests/unit/test_summarizer.py -v  # Phase 4
+python3 -m pytest tests/unit/test_auth.py tests/unit/test_rate_limiter.py tests/unit/test_routes_documents.py tests/unit/test_routes_query.py tests/integration/test_upload_pipeline.py -v  # Phase 5
+
+# Integration tests only
+python3 -m pytest tests/integration/ -v
 
 # Single file
 python3 -m pytest tests/unit/test_gemini_client.py -v
