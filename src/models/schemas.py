@@ -159,6 +159,40 @@ class DocumentDetailResponse(BaseModel):
     tables: list[ExtractedTable] = Field(default_factory=list)
 
 
+# ---------------------------------------------------------------------------
+# Chunking schemas
+# ---------------------------------------------------------------------------
+
+class EnrichedChunk(BaseModel):
+    """A text chunk enriched with structural and provenance metadata."""
+
+    chunk_id: str
+    text: str
+    token_count: int = Field(ge=0)
+    section_type: SectionType
+    section_title: str | None = None
+    page_numbers: list[int] = Field(default_factory=list)
+    paper_id: str
+    paper_title: str | None = None
+    chunk_index: int = Field(ge=0)
+    total_chunks: int = Field(ge=0)
+    metadata: dict = Field(default_factory=dict)
+
+
+class PaperStructure(BaseModel):
+    """Aggregated output from Phase 1 that feeds into the chunker.
+
+    Bundles sections, tables, references, and metadata into a single
+    object representing a fully-parsed paper.
+    """
+
+    paper_id: str
+    sections: list[DetectedSection] = Field(default_factory=list)
+    tables: list[ExtractedTable] = Field(default_factory=list)
+    references: list[str] = Field(default_factory=list)
+    metadata: DocumentMetadataSchema = Field(default_factory=DocumentMetadataSchema)
+
+
 class HealthResponse(BaseModel):
     """Health-check response."""
 
