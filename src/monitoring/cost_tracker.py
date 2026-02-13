@@ -85,8 +85,8 @@ class CostTracker:
             return sum(r.cost_usd for r in self._records)
 
     def get_daily_cost(self, day: date | None = None) -> float:
-        """Return total cost for a specific day (default: today)."""
-        target = day or date.today()
+        """Return total cost for a specific day (default: today UTC)."""
+        target = day or datetime.now(timezone.utc).date()
         with self._lock:
             return sum(
                 r.cost_usd for r in self._records if r.timestamp.date() == target
