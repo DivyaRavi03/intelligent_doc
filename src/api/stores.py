@@ -11,17 +11,16 @@ from __future__ import annotations
 import threading
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from src.models.schemas import (
+    DetectedSection,
     DocumentMetadataSchema,
     DocumentStatus,
-    DetectedSection,
     ExtractedTable,
     PaperExtraction,
 )
-
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -40,8 +39,8 @@ class DocumentRecord:
     status: DocumentStatus = DocumentStatus.PENDING
     task_id: str | None = None
     error_message: str | None = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     # Cached processing results
     metadata: DocumentMetadataSchema | None = None
     sections: list[DetectedSection] = field(default_factory=list)
@@ -57,7 +56,7 @@ class APIKeyRecord:
     name: str
     rate_limit_uploads: int = 10
     rate_limit_queries: int = 100
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 # ---------------------------------------------------------------------------
@@ -78,7 +77,7 @@ class InMemoryDocumentStore:
     def save(self, doc: DocumentRecord) -> None:
         """Insert or update a document record."""
         with self._lock:
-            doc.updated_at = datetime.now(timezone.utc)
+            doc.updated_at = datetime.now(UTC)
             self._store[doc.id] = doc
 
     def delete(self, doc_id: uuid.UUID) -> bool:
@@ -114,7 +113,7 @@ class InMemoryDocumentStore:
             if doc:
                 doc.status = status
                 doc.error_message = error
-                doc.updated_at = datetime.now(timezone.utc)
+                doc.updated_at = datetime.now(UTC)
 
     def count(self) -> int:
         """Return total number of documents."""

@@ -127,7 +127,7 @@ class EmbeddingService:
 
     def _embed_with_retry(
         self,
-        genai,  # noqa: ANN001  — google.generativeai module
+        genai: object,
         batch: list[str],
         task_type: str,
     ) -> list[list[float]]:

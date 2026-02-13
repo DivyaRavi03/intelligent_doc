@@ -10,8 +10,9 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from src.config import settings
 from src.models.schemas import DocumentStatus, PaperStructure
@@ -190,10 +191,9 @@ def _process_document_impl(
 
     except Exception:
         logger.exception("Processing failed for %s", doc_id)
-        try:
+        import contextlib
+        with contextlib.suppress(Exception):
             store.update_status(doc_uuid, DocumentStatus.FAILED, error=str(doc_id))
-        except Exception:
-            pass
         raise
 
 
@@ -202,7 +202,7 @@ def _create_celery_task():  # type: ignore[no-untyped-def]
     try:
         from celery import shared_task
 
-        @shared_task(bind=True, name="process_document")
+        @shared_task(bind=True, name="process_document")  # type: ignore[untyped-decorator]
         def process_document(self, doc_id: str) -> dict:  # type: ignore[no-untyped-def]
             """Celery task wrapper for document processing."""
             pdf_path = Path(settings.upload_dir) / f"{doc_id}.pdf"

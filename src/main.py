@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
 app = FastAPI(
     title="Intelligent Document Processing",
     description="AI-powered research paper analysis platform",
-    version="0.5.0",
+    version="0.8.0",
     lifespan=lifespan,
 )
 
@@ -52,7 +52,7 @@ app.add_middleware(
 
 # -- Rate limiter --
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 # -- Routers --
 app.include_router(documents_router)

@@ -163,7 +163,7 @@ class TableExtractor:
         try:
             page = doc[page_number]
             pix = page.get_pixmap(dpi=_VISION_DPI)
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
         finally:
             doc.close()
 

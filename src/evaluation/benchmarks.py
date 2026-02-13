@@ -9,13 +9,13 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from src.evaluation.extraction_eval import ExtractionEvaluator, ExtractionEvalResult
-from src.evaluation.qa_eval import QAEvaluator, QAEvalResult
-from src.evaluation.retrieval_eval import RetrievalEvaluator, RetrievalEvalResult
+from src.evaluation.extraction_eval import ExtractionEvalResult, ExtractionEvaluator
+from src.evaluation.qa_eval import QAEvalResult, QAEvaluator
+from src.evaluation.retrieval_eval import RetrievalEvalResult, RetrievalEvaluator
 from src.llm.extractor import PaperExtractor
 from src.llm.qa_engine import QAEngine
 from src.retrieval.hybrid_retriever import HybridRetriever
@@ -117,7 +117,7 @@ class BenchmarkSuite:
             :class:`BenchmarkReport` with all results and pass/fail status.
         """
         report = BenchmarkReport(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             thresholds=dict(THRESHOLDS),
         )
 
@@ -181,7 +181,7 @@ class BenchmarkSuite:
             from src.models.schemas import EvaluationResult
 
             eval_result = EvaluationResult(
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 test_set_name="benchmark",
                 accuracy=report.extraction.get("overall_accuracy", 0.0),
                 faithfulness_score=report.qa.get("avg_faithfulness", 0.0),

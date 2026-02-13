@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import uuid
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -52,7 +52,7 @@ async def submit_feedback(
     flag the extraction prompt for review.
     """
     feedback_id = uuid.uuid4()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     entry = {
         "id": feedback_id,

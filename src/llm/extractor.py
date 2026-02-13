@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from collections.abc import Callable
 from difflib import SequenceMatcher
 
 from src.llm.gemini_client import GeminiClient
@@ -213,7 +214,7 @@ class PaperExtractor:
         text: str,
         prompt_a: str,
         prompt_b: str,
-        parse_func: staticmethod,
+        parse_func: Callable[[str], list[dict]],
     ) -> tuple[list[dict], float]:
         """Run extraction with two prompts and compute consistency.
 

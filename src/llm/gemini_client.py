@@ -11,7 +11,8 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from src.config import settings
 from src.models.schemas import LLMResponse
@@ -81,12 +82,16 @@ class GeminiClient:
         model_name: str | None = None,
         max_retries: int = _MAX_RETRIES,
         cache_ttl: int = _CACHE_TTL_SECONDS,
+        model_router: Any = None,
+        cache_manager: Any = None,
     ) -> None:
         self._model_name = model_name or settings.gemini_model
         self._max_retries = max_retries
         self._cache_ttl = cache_ttl
         self._redis: Any = None  # lazy
         self._redis_checked = False
+        self._model_router = model_router
+        self._cache_manager = cache_manager
 
     # ------------------------------------------------------------------
     # Public API
@@ -180,6 +185,50 @@ class GeminiClient:
             cached=False,
             cost_usd=round(cost, 8),
         )
+
+    def generate_for_task(
+        self,
+        prompt: str,
+        task_type: str,
+        system_instruction: str | None = None,
+        response_schema: dict | None = None,
+    ) -> LLMResponse:
+        """Route to the appropriate model and cache tier based on task type.
+
+        Falls back to :meth:`generate` when no router/cache_manager is
+        configured.
+        """
+        original_model = self._model_name
+        try:
+            if self._model_router:
+                from src.llm.model_router import TaskType
+
+                self._model_name = self._model_router.route(TaskType(task_type))
+
+            if self._cache_manager:
+                cache_key = self._cache_manager.make_key(
+                    prompt, self._model_name, task_type
+                )
+                cached = self._cache_manager.get(cache_key, task_type)
+                if cached is not None:
+                    return LLMResponse(
+                        content=cached,
+                        input_tokens=0,
+                        output_tokens=0,
+                        latency_ms=0.0,
+                        model=self._model_name,
+                        cached=True,
+                        cost_usd=0.0,
+                    )
+
+            result = self.generate(prompt, system_instruction, response_schema)
+
+            if self._cache_manager:
+                self._cache_manager.set(cache_key, result.content, task_type)
+
+            return result
+        finally:
+            self._model_name = original_model
 
     # ------------------------------------------------------------------
     # Retry

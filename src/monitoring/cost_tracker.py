@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 # Pricing per 1M tokens (USD)
@@ -30,7 +30,7 @@ class CostRecord:
     output_tokens: int
     cost_usd: float
     endpoint: str = ""
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class CostTracker:
@@ -86,7 +86,7 @@ class CostTracker:
 
     def get_daily_cost(self, day: date | None = None) -> float:
         """Return total cost for a specific day (default: today UTC)."""
-        target = day or datetime.now(timezone.utc).date()
+        target = day or datetime.now(UTC).date()
         with self._lock:
             return sum(
                 r.cost_usd for r in self._records if r.timestamp.date() == target

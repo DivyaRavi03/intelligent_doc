@@ -48,14 +48,14 @@ class VectorStore:
     ) -> None:
         self.persist_dir = persist_dir or settings.chroma_persist_dir
         self.collection_name = collection_name
-        self._client = None
-        self._collection = None
+        self._client: object = None
+        self._collection: object = None
 
     # ------------------------------------------------------------------
     # Lazy initialisation
     # ------------------------------------------------------------------
 
-    def _get_collection(self):  # noqa: ANN202
+    def _get_collection(self) -> object:
         """Return the ChromaDB collection, creating it on first access."""
         if self._collection is not None:
             return self._collection
@@ -109,7 +109,7 @@ class VectorStore:
         metadatas: list[dict] = []
         embedding_list: list[list[float]] = []
 
-        for chunk, emb in zip(chunks, embeddings):
+        for chunk, emb in zip(chunks, embeddings, strict=True):
             ids.append(chunk.chunk_id)
             documents.append(chunk.text)
             metadatas.append(self._chunk_to_metadata(chunk))

@@ -6,12 +6,11 @@ Provides health checks, metrics, cost breakdowns, and evaluation results.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
 
 from src.api.auth import optional_api_key, verify_api_key
-from src.api.rate_limiter import ADMIN_LIMIT, limiter
 from src.api.stores import get_metrics
 from src.models.schemas import (
     CostBreakdown,
@@ -76,7 +75,7 @@ async def health_check(
         database="ok",  # in-memory store always available
         redis="ok" if redis_ok else "unavailable",
         chromadb="ok" if chromadb_ok else "unavailable",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
 
@@ -147,7 +146,7 @@ async def get_latest_evaluation(
     if _latest_eval is not None:
         return _latest_eval
     return EvaluationResult(
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         test_set_name="default",
         accuracy=0.0,
         faithfulness_score=0.0,

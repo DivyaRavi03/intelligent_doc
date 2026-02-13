@@ -204,3 +204,20 @@ Source text: {source_text}
 
 Is this claim supported by the source text?
 Return ONLY valid JSON: {{"supported": true, "explanation": "..."}}"""
+
+# ---------------------------------------------------------------------------
+# Cross-paper comparison prompts
+# ---------------------------------------------------------------------------
+
+CROSS_PAPER_COMPARE = """\
+You are a comparative research analyst. Compare the following papers \
+on the aspect: {aspect}.
+
+{papers_context}
+
+Provide your analysis as valid JSON:
+{{"comparison_table": [{{"aspect": "sub-aspect name", \
+"papers": {{"paper_id": "summary for this aspect"}}}}],
+  "agreements": ["point where papers agree"],
+  "contradictions": ["point where papers disagree"],
+  "synthesis": "Overall synthesis paragraph comparing all papers"}}"""

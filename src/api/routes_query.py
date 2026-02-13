@@ -22,8 +22,8 @@ from src.models.schemas import (
     CompareRequest,
     CompareResponse,
     DocumentStatus,
-    QueryRequest,
     QAResponse,
+    QueryRequest,
     SearchRequest,
     SearchResponse,
     SearchResultItem,
@@ -83,6 +83,17 @@ def _get_summarizer():  # type: ignore[no-untyped-def]
         from src.llm.summarizer import PaperSummarizer
         _summarizer = PaperSummarizer(client=_get_client())
     return _summarizer
+
+
+_cross_paper = None
+
+
+def _get_cross_paper_analyzer():  # type: ignore[no-untyped-def]
+    global _cross_paper
+    if _cross_paper is None:
+        from src.llm.cross_paper import CrossPaperAnalyzer
+        _cross_paper = CrossPaperAnalyzer(client=_get_client(), store=get_document_store())
+    return _cross_paper
 
 
 # ------------------------------------------------------------------
@@ -194,47 +205,21 @@ async def compare_papers(
     """Compare multiple papers on a specific aspect."""
     logger.info("Compare: %s on aspect=%s", body.paper_ids, body.aspect)
 
-    paper_summaries: dict[str, str] = {}
-    for paper_id in body.paper_ids:
-        try:
-            doc_uuid = uuid.UUID(paper_id)
-            doc = store.get(doc_uuid)
-            if doc and doc.sections:
-                paper_summaries[paper_id] = "\n".join(
-                    s.text[:500] for s in doc.sections[:3]
-                )
-            else:
-                paper_summaries[paper_id] = "Content unavailable"
-        except (ValueError, Exception):
-            paper_summaries[paper_id] = "Content unavailable"
-
     try:
-        client = _get_client()
-        prompt = f"Compare the following papers on {body.aspect}:\n\n"
-        for i, (pid, text) in enumerate(paper_summaries.items(), 1):
-            prompt += f"Paper {i} ({pid}):\n{text[:1000]}\n\n"
-        prompt += "Provide a comparison and list key differences."
+        analyzer = _get_cross_paper_analyzer()
+        result = analyzer.compare_papers(body.paper_ids, body.aspect)
 
-        llm_response = client.generate(prompt)
-        comparison_text = llm_response.content
-
-        key_differences = [
-            line.strip("- ").strip()
-            for line in comparison_text.split("\n")
-            if line.strip().startswith("-") and len(line.strip()) > 3
-        ][:5]
+        return CompareResponse(
+            aspect=result.aspect,
+            papers={pid: "included" for pid in result.paper_ids},
+            comparison_text=result.synthesis,
+            key_differences=result.contradictions[:5],
+        )
     except Exception as exc:
         logger.exception("Comparison error")
         raise HTTPException(
             status_code=500, detail=f"Comparison failed: {exc}"
         ) from exc
-
-    return CompareResponse(
-        aspect=body.aspect,
-        papers=paper_summaries,
-        comparison_text=comparison_text,
-        key_differences=key_differences,
-    )
 
 
 # ------------------------------------------------------------------

@@ -154,12 +154,12 @@ class LayoutAnalyzer:
         accumulators.append(current)
 
         # Convert to DetectedSection objects
-        detected: list[DetectedSection] = []
+        sections: list[DetectedSection] = []
         for idx, acc in enumerate(accumulators):
             text = "\n".join(acc.lines).strip()
             if not text and acc.section_type == SectionType.TITLE and not acc.title:
                 continue  # skip empty leading section
-            detected.append(
+            sections.append(
                 DetectedSection(
                     section_type=acc.section_type,
                     title=acc.title,
@@ -170,7 +170,7 @@ class LayoutAnalyzer:
                 )
             )
 
-        return detected
+        return sections
 
     # ------------------------------------------------------------------
     # Heading heuristics

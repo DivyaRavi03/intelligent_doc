@@ -8,7 +8,6 @@ a terminal state.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -105,7 +104,6 @@ async def processing_websocket(websocket: WebSocket, task_id: str) -> None:
         except Exception:
             pass
     finally:
-        try:
+        import contextlib
+        with contextlib.suppress(Exception):
             await websocket.close()
-        except Exception:
-            pass

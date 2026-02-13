@@ -53,7 +53,7 @@ docs/                # Line 9  — Documentation has no runtime purpose.
 .pytest_cache        # Line 12 — Test runner cache.
 data/                # Line 13 — Local data files. Production uses named Docker volumes.
 *.egg-info/          # Line 14 — Package metadata created during `pip install -e .`.
-.claude/             # Line 15 — Claude Code project context. Dev-only.
+.claude/             # Line 15 — IDE/editor project context. Dev-only.
 reports/             # Line 16 — Evaluation report outputs.
 .github/             # Line 17 — CI/CD workflow definitions. Only GitHub Actions reads these.
 ```

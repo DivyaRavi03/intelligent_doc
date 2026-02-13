@@ -163,10 +163,7 @@ class ChunkOptimizer:
         scored: list[tuple[float, int, EnrichedChunk]] = []
         for idx, chunk in enumerate(chunks):
             chunk_terms = set(chunk.text.lower().split())
-            if not query_terms:
-                overlap = 0.0
-            else:
-                overlap = len(query_terms & chunk_terms) / len(query_terms)
+            overlap = 0.0 if not query_terms else len(query_terms & chunk_terms) / len(query_terms)
             # Secondary sort by chunk_index for stability
             scored.append((overlap, -idx, chunk))
 

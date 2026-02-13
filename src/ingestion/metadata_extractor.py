@@ -63,7 +63,7 @@ class MetadataExtractor:
     def _heuristic_extract(self, pages: list[PageResult]) -> DocumentMetadataSchema:
         """Regex-based metadata extraction from the first pages."""
         text = "\n".join(p.text for p in pages[:_HEURISTIC_PAGES])
-        lines = [l.strip() for l in text.split("\n") if l.strip()]
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
 
         title = self._extract_title(lines)
         authors = self._extract_authors(lines, title)

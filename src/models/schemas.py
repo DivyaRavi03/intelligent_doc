@@ -4,28 +4,27 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
-
 
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
 
 
-class ExtractionMethod(str, Enum):
+class ExtractionMethod(StrEnum):
     NATIVE = "native"
     OCR = "ocr"
 
 
-class SectionType(str, Enum):
+class SectionType(StrEnum):
     TITLE = "title"
     ABSTRACT = "abstract"
     INTRODUCTION = "introduction"
@@ -298,7 +297,7 @@ class QAResponse(BaseModel):
 # Phase 4 — Summarization schemas
 # ---------------------------------------------------------------------------
 
-class SummaryLevel(str, Enum):
+class SummaryLevel(StrEnum):
     ONE_LINE = "one_line"
     ABSTRACT = "abstract"
     DETAILED = "detailed"
@@ -422,6 +421,29 @@ class CompareResponse(BaseModel):
     papers: dict[str, str] = Field(description="paper_id → aspect summary")
     comparison_text: str
     key_differences: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Phase 8 — Cross-paper comparison schemas
+# ---------------------------------------------------------------------------
+
+class ComparisonTableRow(BaseModel):
+    """A single row in a cross-paper comparison table."""
+
+    aspect: str
+    papers: dict[str, str] = Field(description="paper_id → value for that aspect")
+
+
+class CrossPaperComparison(BaseModel):
+    """Structured cross-paper comparison result."""
+
+    paper_ids: list[str]
+    aspect: str
+    comparison_table: list[ComparisonTableRow] = Field(default_factory=list)
+    agreements: list[str] = Field(default_factory=list)
+    contradictions: list[str] = Field(default_factory=list)
+    synthesis: str = ""
+    model_used: str = ""
 
 
 # ---------------------------------------------------------------------------

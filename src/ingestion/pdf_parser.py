@@ -134,7 +134,7 @@ class PDFParser:
         import pytesseract
 
         pix = page.get_pixmap(dpi=self.ocr_dpi)
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
         raw_text: str = pytesseract.image_to_string(img)
         cleaned = self._clean_text(raw_text)
         confidence = self._compute_confidence(page, cleaned, method="ocr")

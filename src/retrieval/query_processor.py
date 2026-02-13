@@ -14,7 +14,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 from src.config import settings
 from src.models.schemas import SectionType
@@ -29,7 +29,7 @@ _MAX_EXPANSIONS = 3
 _RRF_K = 60  # Smoothing constant for cross-query RRF merge
 
 
-class QueryType(str, Enum):
+class QueryType(StrEnum):
     """Classification of query intent."""
 
     FACTUAL = "factual"

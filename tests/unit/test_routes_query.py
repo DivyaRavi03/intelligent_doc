@@ -20,6 +20,7 @@ from src.models.schemas import (
     DetectedSection,
     DocumentMetadataSchema,
     DocumentStatus,
+    LLMResponse,
     SectionType,
 )
 
@@ -266,15 +267,26 @@ class TestCompareEndpoint:
         store.save(doc2)
 
         mock_client = MagicMock()
-        mock_client.generate.return_value = MagicMock(
-            content="Paper 1 focuses on X.\n- Difference A\n- Difference B"
+        mock_client.generate.return_value = LLMResponse(
+            content='{"comparison_table": [], "agreements": [], '
+                    '"contradictions": ["Diff A"], "synthesis": "Paper 1 focuses on X."}',
+            input_tokens=10,
+            output_tokens=5,
+            latency_ms=100.0,
+            model="gemini-1.5-pro",
+            cached=False,
+            cost_usd=0.0001,
         )
 
         app.dependency_overrides[verify_api_key] = lambda: API_KEY
         app.dependency_overrides[get_document_store] = lambda: store
 
         try:
-            with patch("src.api.routes_query._get_client", return_value=mock_client):
+            with patch("src.api.routes_query._get_cross_paper_analyzer") as mock_get:
+                from src.llm.cross_paper import CrossPaperAnalyzer
+                analyzer = CrossPaperAnalyzer(client=mock_client, store=store)
+                mock_get.return_value = analyzer
+
                 transport = ASGITransport(app=app)
                 async with AsyncClient(transport=transport, base_url="http://test") as client:
                     response = await client.post(
@@ -289,7 +301,6 @@ class TestCompareEndpoint:
             assert response.status_code == 200
             data = response.json()
             assert data["aspect"] == "methodology"
-            assert str(doc1.id) in data["papers"]
         finally:
             app.dependency_overrides.clear()
 

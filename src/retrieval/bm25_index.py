@@ -133,7 +133,6 @@ class BM25Index:
         results: list[SearchResult] = []
         for idx, score in scored:
             chunk = self._chunks[idx]
-            page_str = ",".join(str(p) for p in chunk.page_numbers)
             results.append(
                 SearchResult(
                     chunk_id=chunk.chunk_id,

@@ -79,7 +79,7 @@ class PaperSummarizer:
         except ValueError:
             raise ValueError(
                 f"Invalid summary level '{level}'. "
-                f"Must be one of: {', '.join(l.value for l in SummaryLevel)}"
+                f"Must be one of: {', '.join(lv.value for lv in SummaryLevel)}"
             ) from None
 
         if summary_level == SummaryLevel.ONE_LINE:
